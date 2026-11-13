@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agreed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one narrow column like a ballot slip; Siyansh's verdicts land as rubber stamps. */
+:root{
+  --bg:#eceff4;
+  --surface:#ffffff;
+  --ink:#151820;
+  --muted:#5b6271;
+  --line:#d6dae2;
+  --accent:#d3233a;
+  --accent-ink:#ffffff;
+  --t-agreed:#1c9a52;
+  --t-close:#c99410;
+  --t-eh:#dd7224;
+  --t-nope:#868c97;
+  --display:"Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101217; --surface:#191c23; --ink:#eceef3; --muted:#9aa1ae; --line:#2b2f39;
+    --accent:#ff4a5c; --accent-ink:#16080a;
+    --t-agreed:#34c172; --t-close:#e6b231; --t-eh:#f08a3e; --t-nope:#7b818c;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101217; --surface:#191c23; --ink:#eceef3; --muted:#9aa1ae; --line:#2b2f39;
+  --accent:#ff4a5c; --accent-ink:#16080a;
+  --t-agreed:#34c172; --t-close:#e6b231; --t-eh:#f08a3e; --t-nope:#7b818c;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-font-smoothing:antialiased}
+#app{max-width:620px;margin:0 auto;padding:20px 16px 64px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h2{font:900 34px/1 var(--display);letter-spacing:.01em;text-transform:uppercase}
+h3{font:700 22px/1.15 var(--display);text-transform:uppercase;letter-spacing:.02em}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.num{font-variant-numeric:tabular-nums}
+
+/* Brand stamp */
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stamp-logo{font:900 40px/1 var(--display);letter-spacing:.06em;color:var(--accent);border:4px solid var(--accent);border-radius:6px;padding:4px 12px 2px;transform:rotate(-4deg);display:inline-block;text-transform:uppercase}
+.brand-note{font-size:13px;color:var(--muted);text-align:right}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.hero{display:flex;flex-direction:column;gap:8px;padding:6px 2px}
+.hero h1{font:900 52px/.95 var(--display);text-transform:uppercase}
+.hero h1 span{color:var(--accent)}
+
+label{font-weight:600;font-size:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+input[type=text]{font:500 17px var(--body);padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+input.code{font:700 20px var(--display);letter-spacing:.12em;text-transform:uppercase}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row.split{justify-content:space-between}
+.err{color:var(--accent);font-weight:600;font-size:14px}
+
+button{font:600 16px var(--body);cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:11px 16px}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+button.primary:hover{filter:brightness(1.06)}
+button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+button.link{border:none;background:none;padding:4px 0;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+button.block{width:100%}
+
+/* Tier legend */
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tier{border-radius:8px;padding:10px 8px;text-align:center;border:2px solid currentColor;display:flex;flex-direction:column;gap:2px}
+.tier b{font:900 20px/1 var(--display);text-transform:uppercase;letter-spacing:.03em}
+.tier span{font-size:13px;color:var(--muted)}
+.c-agreed{color:var(--t-agreed)} .c-close{color:var(--t-close)} .c-eh{color:var(--t-eh)} .c-nope{color:var(--t-nope)}
+.steps{display:grid;gap:8px;margin:0;padding-left:20px}
+
+/* Host form */
+.qcard{gap:12px}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chip{font:700 12px var(--body);text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.qtext{font:700 20px/1.25 var(--body)}
+.opts{display:grid;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;font-weight:600}
+.opt .badge{flex:none;width:28px;height:28px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;font:900 16px var(--display);color:var(--muted)}
+.opt.ranked{border-color:var(--ink)}
+.opt.ranked .badge{border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink)}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.scale button{padding:10px 4px;font-size:13px;line-height:1.2;min-height:56px}
+.scale button.sel{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.hint{font-size:13px;color:var(--muted)}
+.sticky{position:sticky;bottom:12px;z-index:2;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.gate{border:2px dashed var(--accent)}
+
+/* Code display */
+.codebox{font:900 34px/1.1 var(--display);letter-spacing:.1em;text-align:center;padding:18px 8px;border:3px solid var(--ink);border-radius:10px;word-break:break-all}
+
+/* Play */
+.hud{display:flex;justify-content:space-between;align-items:end;gap:12px}
+.hud .score{font:900 30px/1 var(--display)}
+.dots{display:flex;gap:6px}
+.dot{width:24px;height:10px;border-radius:3px;background:var(--line)}
+.dot.now{background:var(--ink)}
+.dot.t-agreed{background:var(--t-agreed)} .dot.t-close{background:var(--t-close)} .dot.t-eh{background:var(--t-eh)} .dot.t-nope{background:var(--t-nope)}
+.timer{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.timer i{display:block;height:100%;background:var(--accent);width:100%;transform-origin:left}
+.timer.low i{background:var(--t-eh)}
+.pickopt{padding:14px 16px;font-size:17px;text-align:left;display:flex;gap:12px;align-items:center}
+.pickopt kbd{font:700 12px var(--body);border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--muted)}
+
+/* Reveal */
+.result{position:relative}
+.verdict{position:absolute;top:10px;right:12px;font:900 30px/1 var(--display);text-transform:uppercase;letter-spacing:.05em;border:4px solid currentColor;border-radius:6px;padding:4px 10px 2px;transform:rotate(8deg);background:var(--surface)}
+@media (prefers-reduced-motion:no-preference){
+  .verdict{animation:slam .38s cubic-bezier(.2,1.6,.4,1) both}
+  @keyframes slam{from{transform:rotate(18deg) scale(2.2);opacity:0}to{transform:rotate(8deg) scale(1);opacity:1}}
+}
+.rk{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;border:1px solid var(--line)}
+.rk .pos{font:900 20px/1 var(--display);width:28px}
+.rk .lab{flex:1;font-weight:600}
+.rk .pts{font:700 14px var(--body)}
+.rk.you{outline:3px solid var(--ink);outline-offset:-1px}
+.rk .youtag{font:700 11px var(--body);text-transform:uppercase;letter-spacing:.06em;background:var(--ink);color:var(--surface);border-radius:4px;padding:2px 6px}
+.scale-reveal{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.scale-reveal div{border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center;font-size:12px;line-height:1.2;min-height:64px;display:flex;flex-direction:column;justify-content:space-between;gap:4px}
+.scale-reveal .his{border:3px solid var(--accent)}
+.scale-reveal .mine{outline:3px solid var(--ink);outline-offset:-1px}
+.scale-reveal .tag{font:700 10px var(--body);text-transform:uppercase;letter-spacing:.05em}
+
+/* Results */
+.final{align-items:center;text-align:center}
+.big{font:900 84px/.9 var(--display)}
+.title-stamp{font:900 28px/1 var(--display);text-transform:uppercase;color:var(--accent);border:4px solid var(--accent);border-radius:6px;padding:6px 12px 3px;transform:rotate(-3deg);display:inline-block}
+.grid7{font-size:28px;letter-spacing:4px}
+.board{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.board li{display:flex;gap:12px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--line)}
+.board .r{font:900 18px var(--display);width:22px}
+.board .n{flex:1;font-weight:600;overflow-wrap:anywhere}
+.board .s{font:700 16px var(--body)}
+.toast{font-size:14px;color:var(--t-agreed);font-weight:600;min-height:20px}
+
+@media (max-width:420px){
+  .hero h1{font-size:42px}
+  .tiers{grid-template-columns:repeat(2,1fr)}
+  .scale,.scale-reveal{grid-template-columns:1fr}
+  .scale button{min-height:0}
+  .scale-reveal div{flex-direction:row;min-height:0;align-items:center}
+  .codebox{font-size:26px}
+}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<script>
+"use strict";
+const MASTER = "Siyansh";
+const N = 7;          // questions per round
+const SECS = 20;      // seconds per question
+const PTS = [100, 60, 25, 0];
+const TIERS = [
+  { k: "agreed", label: "Agreed", emoji: "🟩" },
+  { k: "close",  label: "Close",  emoji: "🟨" },
+  { k: "eh",     label: "Eh",     emoji: "🟧" },
+  { k: "nope",   label: "Nope",   emoji: "⬛" }
+];
+const SCALE = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
+
+/* Question bank. Game codes point at these by index: only ever APPEND new questions, never reorder or delete. */
+const BANK = [
+  { t:"r", q:"Best pizza topping?", o:["Pepperoni","Mushrooms","Pineapple","Plain cheese"] },
+  { t:"r", q:"Best season?", o:["Spring","Summer","Fall","Winter"] },
+  { t:"r", q:"Best fast food chain?", o:["McDonald's","Chick-fil-A","Taco Bell","Wendy's"] },
+  { t:"r", q:"Ideal vacation?", o:["Beach","Big city","Mountains","Staycation"] },
+  { t:"r", q:"Best way to spend a Friday night?", o:["Going out","Gaming","Movie at home","Asleep by 10"] },
+  { t:"r", q:"Best pet?", o:["Dog","Cat","Fish","No pet"] },
+  { t:"r", q:"Best breakfast?", o:["Pancakes","Eggs and toast","Cereal","Skip it"] },
+  { t:"r", q:"Best sport to watch?", o:["Football","Basketball","Soccer","Cricket"] },
+  { t:"r", q:"Best streaming service?", o:["Netflix","YouTube","Disney+","HBO Max"] },
+  { t:"r", q:"Best social media app?", o:["Instagram","TikTok","Snapchat","X"] },
+  { t:"r", q:"Best phone brand?", o:["Apple","Samsung","Google Pixel","OnePlus"] },
+  { t:"r", q:"Best decade for music?", o:["70s","80s","90s","2000s"] },
+  { t:"r", q:"Worst chore?", o:["Dishes","Laundry","Vacuuming","Taking out the trash"] },
+  { t:"r", q:"Best superpower?", o:["Flying","Invisibility","Teleportation","Reading minds"] },
+  { t:"r", q:"Best chip flavor?", o:["Classic salted","Sour cream and onion","BBQ","Salt and vinegar"] },
+  { t:"r", q:"Best dessert?", o:["Ice cream","Cake","Cookies","Brownies"] },
+  { t:"r", q:"Best way to travel far?", o:["Plane","Road trip","Train","Cruise"] },
+  { t:"r", q:"Best holiday?", o:["Halloween","Thanksgiving","Christmas","New Year's"] },
+  { t:"r", q:"Best drink?", o:["Coffee","Tea","Soda","Water"] },
+  { t:"r", q:"Best way to talk to a friend?", o:["Texting","Calling","Voice notes","In person"] },
+  { t:"r", q:"Biggest first date red flag?", o:["Rude to the waiter","On their phone","Talks about their ex","Shows up late"] },
+  { t:"r", q:"Best US city to live in?", o:["New York","Chicago","Los Angeles","Miami"] },
+  { t:"r", q:"Best cuisine?", o:["Indian","Italian","Mexican","Chinese"] },
+  { t:"r", q:"Best time of day?", o:["Morning","Afternoon","Evening","Late night"] },
+  { t:"r", q:"Best Olympic event to watch?", o:["100m sprint","Swimming","Gymnastics","Basketball"] },
+  { t:"r", q:"You get $1 million. First move?", o:["Invest it","Travel","Buy a house","Quit my job"] },
+  { t:"s", q:"Pineapple belongs on pizza." },
+  { t:"s", q:"A hot dog is a sandwich." },
+  { t:"s", q:"Cereal goes in before the milk." },
+  { t:"s", q:"Working from home beats the office." },
+  { t:"s", q:"AI will make life better overall." },
+  { t:"s", q:"Tipping culture has gotten out of hand." },
+  { t:"s", q:"Texting back hours later is fine." },
+  { t:"s", q:"Movies are better in a theater." },
+  { t:"s", q:"Breakfast is the most important meal." },
+  { t:"s", q:"Toilet paper goes over, not under." },
+  { t:"s", q:"Social media does more harm than good." },
+  { t:"s", q:"Reclining your seat on a plane is fine." },
+  { t:"s", q:"Cats are better than dogs." },
+  { t:"s", q:"Money can buy happiness." },
+  /* ----- Spicy (m:1) ----- */
+  { m:1, t:"r", q:"Acceptable excuse for cheating?", o:["She cheated first","I was drunk","We were on a break","None. You're done."] },
+  { m:1, t:"r", q:"Worst thing to say in an argument with your girl:", o:["Calm down","You sound like your mom","Okay.","Is it that time of the month?"] },
+  { m:1, t:"r", q:"Your boy's girl hits on you. You:", o:["Tell him immediately","Shut it down, take it to the grave","Screenshot everything","Move to another state"] },
+  { m:1, t:"r", q:"Best way to dump someone:", o:["In person","Over text","Have a friend do it","Ghost them and change cities"] },
+  { m:1, t:"r", q:"Worst person to accidentally text \"I love you\":", o:["Your boss","Your ex","Your friend's mom","The group chat"] },
+  { m:1, t:"r", q:"Who wins in a fight?", o:["Your mom with a chappal","10 toddlers","An angry goose","A gym bro"] },
+  { m:1, t:"r", q:"Most unforgivable?", o:["Double dipping","Reclining on a plane","Talking during a movie","Not returning the cart"] },
+  { m:1, t:"r", q:"You win the lottery. First move:", o:["Tell nobody","Quit your job dramatically","Pay off your parents' house","Buy a Lambo"] },
+  { m:1, t:"r", q:"Your parents find your search history. You:", o:["Deny everything","Blame the Wi-Fi","Fake your death","Lean in"] },
+  { m:1, t:"r", q:"Worst thing to find out about your partner's past:", o:["They were a DJ","They had a crypto podcast","They wrote fanfiction","They dated your cousin"] },
+  { m:1, t:"r", q:"Most acceptable lie:", o:["I'm 5 minutes away","I love the gift","I read the terms","My phone died"] },
+  { m:1, t:"r", q:"Worst uncle at a desi party:", o:["Asks your salary","Asks when you're getting married","Compares you to his son","Talks politics for 3 hours"] },
+  { m:1, t:"r", q:"Biggest red flag in a guy:", o:["Still vapes at 30","Grindset quote in his bio","Calls his mom \"mother\"","Owns 3 swords"] },
+  { m:1, t:"r", q:"When is it okay to fart in front of your partner?", o:["First date, set expectations","3 months in","After marriage","Never. Take it to the grave."] },
+  { m:1, t:"r", q:"Best excuse to miss your best friend's wedding:", o:["Work","Your ex will be there","Big game is on","Still hungover from the bachelor party"] },
+  { m:1, t:"r", q:"Best time to break up:", o:["Before Valentine's Day","Before their birthday","After the holidays (keep the gifts)","Right after they pay for the trip"] },
+  { m:1, t:"r", q:"Who would you trust to babysit your kids?", o:["Trump","Biden","Obama","Kamala"] },
+  { m:1, t:"r", q:"Your friend's girlfriend is ugly. He asks your honest opinion. You:", o:["Lie with a straight face","\"She seems nice\"","Tell him the truth","Change the subject to sports"] },
+  { m:1, t:"s", q:"Cheating is fine if she cheated first." },
+  { m:1, t:"s", q:"Cheating doesn't count if it's in a different time zone." },
+  { m:1, t:"s", q:"Spanking kids is fine." },
+  { m:1, t:"s", q:"Ghosting is more polite than rejecting someone." },
+  { m:1, t:"s", q:"Dating your boy's sister is fine if you ask him first." },
+  { m:1, t:"s", q:"Peeing in the shower is completely normal." },
+  { m:1, t:"s", q:"Lying about your height on a dating app is just rounding." },
+  { m:1, t:"s", q:"If she's a 10 but votes the other party, it's still a yes." },
+  { m:1, t:"s", q:"Splitting the bill on a first date is an instant red flag." },
+  { m:1, t:"s", q:"Your mom's cooking beats every restaurant." },
+  { m:1, t:"s", q:"Unplugging the Wi-Fi is a valid parenting strategy." },
+  { m:1, t:"s", q:"Faking sick to skip a wedding is fine." },
+  { m:1, t:"s", q:"Re-gifting is fine as long as you remove the card." },
+  { m:1, t:"s", q:"Stealing fries off someone's plate is a love language." },
+  { m:1, t:"s", q:"Fake laughing at your boss's jokes is a job skill." },
+  { m:1, t:"s", q:"Leaving the group chat is a declaration of war." },
+  { m:1, t:"s", q:"If the dog doesn't like them, dump them." },
+  { m:1, t:"s", q:"A gym visit just for the mirror selfie still counts." },
+  { m:1, t:"s", q:"Drunk texting your ex is just honesty." },
+  { m:1, t:"s", q:"A man who can't cook shouldn't get married." },
+  { m:1, t:"s", q:"Lying to your parents is a basic survival skill." },
+  { m:1, t:"s", q:"Sneaking your own food into the movies is fine." },
+  { m:1, t:"s", q:"Taking credit for a quiet coworker's idea is fine." },
+  { m:1, t:"s", q:"Being late is fine if you show up with snacks." },
+  { m:1, t:"s", q:"If she pays for dinner, you owe her nothing." },
+  { m:1, t:"s", q:"Breaking up over text is fine if it's under 3 months." },
+  { m:1, t:"s", q:"Recording your friend's drunk dancing for the group chat is fair game." },
+  { m:1, t:"s", q:"Different music taste is grounds for divorce." },
+  { m:1, t:"s", q:"Pretending to be on the phone to avoid someone is genius, not rude." },
+  { m:1, t:"s", q:"Politicians should have to win a cage match to take office." },
+  { m:1, t:"s", q:"Reading your partner's texts is fine if they left the phone unlocked." },
+  { m:1, t:"s", q:"You're allowed one free cheat if you're on vacation." },
+  { m:1, t:"s", q:"Kids at restaurants should be legally required to sit in a separate room." },
+  { m:1, t:"s", q:"Your best friend's opinion matters more than your parents' on who you date." }
+];
+const inMode = (q, mode) => mode === "spicy" ? !!q.m : !q.m;
+
+/* ---------- Ranking <-> index (Lehmer code over 4 options, 24 orders) ---------- */
+const FACT = [6, 2, 1, 1];
+function permToIdx(p){ const a=[0,1,2,3]; let idx=0; for(let i=0;i<4;i++){ const k=a.indexOf(p[i]); idx+=k*FACT[i]; a.splice(k,1);} return idx; }
+function idxToPerm(idx){ const a=[0,1,2,3], p=[]; for(let i=0;i<4;i++){ const k=Math.floor(idx/FACT[i]); idx%=FACT[i]; p.push(a.splice(k,1)[0]); } return p; }
+
+/* ---------- Game code: 7 x (question, answer), checksummed and scrambled ---------- */
+const BASE = 6144; // 256 question slots x 24 answer values
+function mask(c,i){ return ((Math.imul(c+17, 2654435761) ^ Math.imul(i+5, 40503)) >>> 0) % BASE; }
+function encode(items){
+  const v = items.map(x => x.id*24 + x.a);
+  const c = v.reduce((s,x,i) => s + x*(i+3), 0) % 1296;
+  let n = 0n;
+  for(let i=N-1;i>=0;i--) n = n*BigInt(BASE) + BigInt((v[i] + mask(c,i)) % BASE);
+  const raw = (c.toString(36).padStart(2,"0") + n.toString(36).padStart(18,"0")).toUpperCase();
+  return raw.match(/.{5}/g).join("-");
+}
+function cleanCode(s){ return String(s||"").replace(/[^0-9a-z]/gi,"").toLowerCase(); }
+function decode(s){
+  const raw = cleanCode(s);
+  if(raw.length !== 20) return null;
+  const c = parseInt(raw.slice(0,2),36);
+  let n = 0n;
+  for(const ch of raw.slice(2)){ const d=parseInt(ch,36); if(isNaN(d)) return null; n = n*36n + BigInt(d); }
+  const v = [];
+  for(let i=0;i<N;i++){ const w=Number(n % BigInt(BASE)); n = n / BigInt(BASE); v.push((w - mask(c,i) + BASE) % BASE); }
+  if(n !== 0n) return null;
+  if(v.reduce((s,x,i) => s + x*(i+3), 0) % 1296 !== c) return null;
+  const items = v.map(x => ({ id: Math.floor(x/24), a: x % 24 }));
+  const seen = new Set();
+  for(const it of items){
+    const q = BANK[it.id];
+    if(!q || seen.has(it.id)) return null;
+    if(q.t === "s" && it.a > 4) return null;
+    seen.add(it.id);
+  }
+  return items;
+}
+function pretty(s){ const r=cleanCode(s).toUpperCase(); return r.length===20 ? r.match(/.{5}/g).join("-") : r; }
+
+/* ---------- Scoring ---------- */
+// Returns tier index 0..3. Ranked: position of your pick in Siyansh's order. Scale: distance from his point.
+function tierFor(item, pick){
+  if(pick == null) return 3;
+  const q = BANK[item.id];
+  if(q.t === "r") return idxToPerm(item.a).indexOf(pick);
+  return Math.min(3, Math.abs(item.a - pick));
+}
+function titleFor(pct){
+  if(pct >= 90) return "Basically " + MASTER;
+  if(pct >= 70) return "Inner circle";
+  if(pct >= 50) return "Group chat regular";
+  if(pct >= 30) return "Acquaintance";
+  return "Have you met him?";
+}
+
+/* ---------- Storage (this device only; optional) ---------- */
+function load(key, fallback){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+const memBoards = {};
+function getBoard(code){ const k="agreed:board:"+cleanCode(code); return memBoards[k] || load(k, []); }
+function addToBoard(code, entry){
+  const k="agreed:board:"+cleanCode(code);
+  const b = getBoard(code).concat([entry]).sort((x,y) => y.score - x.score);
+  memBoards[k] = b; save(k, b); return b;
+}
+
+/* ---------- Helpers ---------- */
+const $app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function hashCode(){ const h = (location.hash||"").slice(1); return decode(h) ? pretty(h) : ""; }
+function setHash(code){ try{ history.replaceState(null, "", "#" + cleanCode(code).toUpperCase()); }catch(e){ location.hash = cleanCode(code).toUpperCase(); } }
+async function copy(text, toastId){
+  const el = document.getElementById(toastId);
+  try{ await navigator.clipboard.writeText(text); if(el) el.textContent = "Copied."; }
+  catch(e){ if(el) el.textContent = "Couldn't copy. Select the text and copy it by hand."; }
+}
+function brand(note){
+  return `<header class="brand"><span class="stamp-logo">Agreed</span><span class="brand-note">${note||""}</span></header>`;
+}
+
+/* ---------- State ---------- */
+let S = { screen:"home", code: hashCode(), name:"", err:"", mode:"spicy" };
+let timerId = null;
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+function go(patch){ stopTimer(); S = Object.assign({}, S, patch); render(); window.scrollTo(0,0); }
+
+/* ---------- Screens ---------- */
+function renderHome(){
+  const board = S.code ? getBoard(S.code) : [];
+  return `
+  ${brand("Think like " + MASTER)}
+  <section class="hero">
+    <h1>Pick what <span>${MASTER}</span> would pick.</h1>
+    <p class="muted">${N} hot takes. ${MASTER} already locked in where he stands. The closer you get to his take, the more you score. What gets said in Agreed stays in Agreed.</p>
+  </section>
+
+  <form class="card" id="playForm" novalidate>
+    <h3>Play a round</h3>
+    <div class="field">
+      <label for="codeIn">Game code from ${MASTER}</label>
+      <input type="text" id="codeIn" class="code" autocomplete="off" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" value="${esc(S.code)}">
+    </div>
+    <div class="field">
+      <label for="nameIn">Your name</label>
+      <input type="text" id="nameIn" maxlength="24" autocomplete="nickname" placeholder="So the scoreboard knows you" value="${esc(S.name)}">
+    </div>
+    ${S.err ? `<p class="err" role="alert">${esc(S.err)}</p>` : ""}
+    <button class="primary block" type="submit">Start</button>
+  </form>
+
+  <section class="card">
+    <h3>How scoring works</h3>
+    <div class="tiers">
+      ${TIERS.map((t,i)=>`<div class="tier c-${t.k}"><b>${t.label}</b><span class="num">+${PTS[i]}</span></div>`).join("")}
+    </div>
+    <ol class="steps small">
+      <li><b>Pick one</b> questions: ${MASTER} ranked all four options. His #1 is Agreed, #2 is Close, #3 is Eh, #4 is Nope.</li>
+      <li><b>Agree or disagree</b> questions: ${MASTER} picked a spot on a five-step scale. Hit it exactly for Agreed; each step off drops a tier.</li>
+      <li>You get ${SECS} seconds per question. Running out of time is a Nope. Max score is ${N*100}.</li>
+    </ol>
+  </section>
+
+  ${board.length ? `<section class="card"><h3>Scoreboard on this device</h3>${boardList(board)}</section>` : ""}
+
+  <section class="card gate">
+    <div class="row split">
+      <div>
+        <h3>Are you ${MASTER}?</h3>
+        <p class="muted small">Fill in your answers to set up a new round.</p>
+      </div>
+      <button type="button" id="hostBtn">Set up a round</button>
+    </div>
+  </section>`;
+}
+function bindHome(){
+  document.getElementById("playForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const code = document.getElementById("codeIn").value;
+    const name = document.getElementById("nameIn").value.trim();
+    const items = decode(code);
+    if(!items){ S.code = code; S.name = name; S.err = "That code doesn't match a round. Check it with " + MASTER + " and try again."; render(); return; }
+    if(!name){ S.code = pretty(code); S.name = ""; S.err = "Add your name so your score shows up on the board."; render(); document.getElementById("nameIn").focus(); return; }
+    setHash(code);
+    startGame(pretty(code), name, items);
+  });
+  document.getElementById("hostBtn").addEventListener("click", () => go({ screen:"gate", err:"" }));
+}
+
+function renderGate(){
+  return `${brand("Host setup")}
+  <section class="card gate">
+    <h2>${MASTER} only</h2>
+    <p>Everyone else, look away. On the next screen ${MASTER} answers ${N} questions. Those answers become the key for everyone who plays.</p>
+    <ul class="steps small">
+      <li>For <b>Pick one</b> questions, tap all four options in order, from most agree to least.</li>
+      <li>For <b>Agree or disagree</b> questions, tap where you honestly land.</li>
+      <li>Don't like a question? Hit <b>Swap</b> for a different one.</li>
+    </ul>
+    <div class="field">
+      <span style="font-weight:600;font-size:14px">Question pack</span>
+      <div class="row" role="radiogroup" aria-label="Question pack">
+        <button class="${S.mode!=="mild"?"primary":""}" data-mode="spicy" role="radio" aria-checked="${S.mode!=="mild"}">Spicy: hot takes, dating, politics</button>
+        <button class="${S.mode==="mild"?"primary":""}" data-mode="mild" role="radio" aria-checked="${S.mode==="mild"}">Mild: pizza toppings and pets</button>
+      </div>
+    </div>
+    <div class="row"><button class="primary" id="beginHost">I'm ${MASTER}, let's go</button><button class="link" id="backHome">Back</button></div>
+  </section>`;
+}
+function bindGate(){
+  document.getElementById("beginHost").addEventListener("click", () => {
+    const mode = S.mode || "spicy";
+    const rIds = shuffle(BANK.map((q,i)=>i).filter(i=>BANK[i].t==="r" && inMode(BANK[i], mode))).slice(0,4);
+    const sIds = shuffle(BANK.map((q,i)=>i).filter(i=>BANK[i].t==="s" && inMode(BANK[i], mode))).slice(0,3);
+    const slots = shuffle(rIds.concat(sIds)).map(id => ({ id, order:[], scale:null }));
+    go({ screen:"host", slots });
+  });
+  document.getElementById("backHome").addEventListener("click", () => go({ screen:"home" }));
+  $app.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => { S.mode = b.dataset.mode; render(); }));
+}
+
+function slotDone(s){ return BANK[s.id].t === "r" ? s.order.length === 4 : s.scale != null; }
+function renderHost(){
+  const done = S.slots.filter(slotDone).length;
+  const cards = S.slots.map((s, i) => {
+    const q = BANK[s.id];
+    let body;
+    if(q.t === "r"){
+      body = `<div class="opts">${q.o.map((o, oi) => {
+        const r = s.order.indexOf(oi);
+        return `<button class="opt ${r>=0?"ranked":""}" data-slot="${i}" data-opt="${oi}" aria-pressed="${r>=0}"><span class="badge">${r>=0 ? r+1 : ""}</span>${esc(o)}</button>`;
+      }).join("")}</div>
+      <p class="hint">${s.order.length < 4 ? `Tap your ${["favorite","second pick","third pick","last pick"][s.order.length]}.` : "Ranked. Tap an option to undo from there."}</p>`;
+    } else {
+      body = `<div class="scale">${SCALE.map((l, li) => `<button class="${s.scale===li?"sel":""}" data-slot="${i}" data-scale="${li}" aria-pressed="${s.scale===li}">${l}</button>`).join("")}</div>`;
+    }
+    return `<section class="card qcard">
+      <div class="qhead"><span class="chip">${i+1} of ${N} · ${q.t==="r"?"Pick one":"Agree or disagree"}</span><button class="link" data-swap="${i}">Swap</button></div>
+      <p class="qtext">${esc(q.q)}</p>
+      ${body}
+    </section>`;
+  }).join("");
+  return `${brand("Host setup")}
+  <section class="hero"><h2>Your answers, ${MASTER}</h2><p class="muted">Be honest. Your friends will be graded against you.</p></section>
+  ${cards}
+  <div class="sticky"><span class="num"><b>${done}</b> of ${N} answered</span><button class="primary" id="lockBtn" ${done<N?"disabled":""}>Lock in answers</button></div>`;
+}
+function bindHost(){
+  $app.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => {
+    const s = S.slots[+b.dataset.slot], oi = +b.dataset.opt;
+    const r = s.order.indexOf(oi);
+    if(r >= 0) s.order = s.order.slice(0, r);
+    else { s.order.push(oi); if(s.order.length === 3) s.order.push([0,1,2,3].find(x => !s.order.includes(x))); }
+    rerenderKeepScroll();
+  }));
+  $app.querySelectorAll("[data-scale]").forEach(b => b.addEventListener("click", () => {
+    S.slots[+b.dataset.slot].scale = +b.dataset.scale; rerenderKeepScroll();
+  }));
+  $app.querySelectorAll("[data-swap]").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.swap, used = new Set(S.slots.map(s => s.id));
+    const pool = BANK.map((q,k)=>k).filter(k => !used.has(k) && inMode(BANK[k], S.mode || "spicy"));
+    S.slots[i] = { id: pool[Math.floor(Math.random()*pool.length)], order:[], scale:null };
+    rerenderKeepScroll();
+  }));
+  document.getElementById("lockBtn").addEventListener("click", () => {
+    if(S.slots.filter(slotDone).length < N) return;
+    const items = S.slots.map(s => ({ id: s.id, a: BANK[s.id].t==="r" ? permToIdx(s.order) : s.scale }));
+    const code = encode(items);
+    setHash(code);
+    go({ screen:"hostDone", code, slots:null });
+  });
+}
+function rerenderKeepScroll(){ const y = window.scrollY; render(); window.scrollTo(0, y); }
+
+function inviteText(code){ return `I made an Agreed round. Think you know what I think?\nGame code: ${code}\nOpen Agreed, enter the code, and see how close you get.`; }
+function renderHostDone(){
+  return `${brand("Round ready")}
+  <section class="card">
+    <h2>Locked in</h2>
+    <p>Send this code to your friends. It holds your answers in scrambled form, so nobody can read them off it.</p>
+    <div class="codebox num" id="codeBox">${esc(S.code)}</div>
+    <div class="row">
+      <button class="primary" id="copyCode">Copy code</button>
+      <button id="copyInvite">Copy invite message</button>
+    </div>
+    <p class="toast" id="toast" role="status"></p>
+    <p class="muted small">This page's link now carries the code too. If you share the page with Share, then Copy link, players land with the code already filled in.</p>
+  </section>
+  <button class="link" id="homeBtn">Back to the start screen</button>`;
+}
+function bindHostDone(){
+  document.getElementById("copyCode").addEventListener("click", () => copy(S.code, "toast"));
+  document.getElementById("copyInvite").addEventListener("click", () => copy(inviteText(S.code), "toast"));
+  document.getElementById("homeBtn").addEventListener("click", () => go({ screen:"home", name:"" }));
+}
+
+/* ---------- Play ---------- */
+function startGame(code, name, items){
+  go({ screen:"play", code, name, items, idx:0, picks:[], tiers:[], err:"", revealed:false });
+  startTimer();
+}
+function startTimer(){
+  stopTimer();
+  S.deadline = Date.now() + SECS*1000;
+  tick();
+  timerId = setInterval(tick, 100);
+}
+function tick(){
+  const left = Math.max(0, S.deadline - Date.now());
+  const bar = document.querySelector(".timer i"), lab = document.getElementById("secs"), wrap = document.querySelector(".timer");
+  if(bar) bar.style.transform = `scaleX(${left/(SECS*1000)})`;
+  if(lab) lab.textContent = Math.ceil(left/1000) + "s";
+  if(wrap) wrap.classList.toggle("low", left < 5000);
+  if(left <= 0) answer(null);
+}
+function score(){ return S.tiers.reduce((s,t) => s + PTS[t], 0); }
+function dots(){
+  return `<div class="dots" aria-hidden="true">${Array.from({length:N}, (_, i) => {
+    const t = S.tiers[i];
+    return `<span class="dot ${t!=null ? "t-"+TIERS[t].k : (i===S.idx ? "now" : "")}"></span>`;
+  }).join("")}</div>`;
+}
+function renderPlay(){
+  const item = S.items[S.idx], q = BANK[item.id];
+  const hud = `<div class="hud"><div><p class="muted small">${esc(S.name)} · Question ${S.idx+1} of ${N}</p>${dots()}</div><div style="text-align:right"><p class="muted small">Score</p><p class="score num">${score()}</p></div></div>`;
+  if(S.revealed) return brand("Round " + esc(S.code.slice(0,5))) + hud + renderReveal(item, q);
+  const opts = q.t === "r"
+    ? `<div class="opts">${q.o.map((o, oi) => `<button class="pickopt" data-pick="${oi}"><kbd>${oi+1}</kbd>${esc(o)}</button>`).join("")}</div>`
+    : `<div class="scale">${SCALE.map((l, li) => `<button data-pick="${li}">${l}</button>`).join("")}</div>`;
+  return `${brand("Round " + esc(S.code.slice(0,5)))}
+  ${hud}
+  <section class="card">
+    <div class="row split"><span class="chip">${q.t==="r" ? "Pick one" : "Agree or disagree"}</span><span class="num small muted" id="secs">${SECS}s</span></div>
+    <div class="timer"><i></i></div>
+    <p class="qtext">${q.t==="r" ? esc(q.q) : "&ldquo;" + esc(q.q) + "&rdquo;"}</p>
+    <p class="hint">What does ${MASTER} think?</p>
+    ${opts}
+  </section>`;
+}
+function renderReveal(item, q){
+  const pick = S.picks[S.idx], t = S.tiers[S.idx], tier = TIERS[t];
+  const stampText = pick == null ? "Time's up" : tier.label;
+  let detail;
+  if(q.t === "r"){
+    const order = idxToPerm(item.a);
+    detail = `<div class="opts">${order.map((oi, r) => `<div class="rk ${oi===pick?"you":""}">
+      <span class="pos c-${TIERS[r].k}">#${r+1}</span><span class="lab">${esc(q.o[oi])}</span>
+      ${oi===pick ? `<span class="youtag">You</span>` : ""}<span class="pts num c-${TIERS[r].k}">+${PTS[r]}</span></div>`).join("")}</div>
+      <p class="hint">${MASTER}'s full ranking, most agreed first.</p>`;
+  } else {
+    detail = `<div class="scale-reveal">${SCALE.map((l, li) => `<div class="${li===item.a?"his":""} ${li===pick?"mine":""}">
+      <span>${l}</span><span class="tag">${li===item.a ? `<span class="c-agreed" style="color:var(--accent)">${MASTER}</span>` : ""}${li===item.a && li===pick ? " + " : ""}${li===pick ? "You" : ""}</span></div>`).join("")}</div>
+      <p class="hint">${MASTER} said <b>${SCALE[item.a]}</b>.</p>`;
+  }
+  const last = S.idx === N-1;
+  return `<section class="card result">
+    <span class="verdict c-${tier.k}">${stampText}</span>
+    <span class="chip" style="align-self:flex-start">+${PTS[t]} points</span>
+    <p class="qtext" style="padding-right:110px">${q.t==="r" ? esc(q.q) : "&ldquo;" + esc(q.q) + "&rdquo;"}</p>
+    ${detail}
+    <button class="primary block" id="nextBtn">${last ? "See my results" : "Next question"}</button>
+  </section>`;
+}
+function answer(pick){
+  if(S.revealed) return;
+  stopTimer();
+  const item = S.items[S.idx];
+  S.picks[S.idx] = pick;
+  S.tiers[S.idx] = tierFor(item, pick);
+  S.revealed = true;
+  render();
+  const nb = document.getElementById("nextBtn"); if(nb) nb.focus();
+}
+function bindPlay(){
+  if(S.revealed){
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      if(S.idx === N-1){
+        const total = score();
+        const grid = S.tiers.map(t => TIERS[t].emoji).join("");
+        const board = addToBoard(S.code, { name:S.name, score: total, grid, at: Date.now() });
+        go({ screen:"results", total, grid, board });
+      } else {
+        S.idx++; S.revealed = false; render(); startTimer(); window.scrollTo(0,0);
+      }
+    });
+    return;
+  }
+  $app.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => answer(+b.dataset.pick)));
+}
+document.addEventListener("keydown", e => {
+  if(S.screen !== "play" || S.revealed || e.target.tagName === "INPUT") return;
+  const n = parseInt(e.key, 10);
+  const q = BANK[S.items[S.idx].id];
+  const max = q.t === "r" ? 4 : 5;
+  if(n >= 1 && n <= max) answer(n-1);
+});
+
+/* ---------- Results ---------- */
+function boardList(board){
+  return `<ol class="board">${board.slice(0,10).map((b, i) => `<li><span class="r num">${i+1}</span><span class="n">${esc(b.name)}</span><span>${b.grid}</span><span class="s num">${b.score}</span></li>`).join("")}</ol>`;
+}
+function shareText(){
+  const pct = Math.round(S.total / (N*100) * 100);
+  return `Agreed ${S.code.slice(0,5)}\nI'm ${pct}% ${MASTER}: ${titleFor(pct)}\n${S.grid}\n${S.total}/${N*100}`;
+}
+function renderResults(){
+  const pct = Math.round(S.total / (N*100) * 100);
+  const counts = TIERS.map((t, i) => S.tiers.filter(x => x === i).length);
+  return `${brand("Round " + esc(S.code.slice(0,5)))}
+  <section class="card final">
+    <p class="muted">${esc(S.name)}, you are</p>
+    <p class="big num">${pct}%</p>
+    <p class="muted">${MASTER}</p>
+    <span class="title-stamp">${esc(titleFor(pct))}</span>
+    <p class="grid7" aria-label="Your results by question">${S.grid}</p>
+    <p class="num"><b>${S.total}</b> of ${N*100} points · ${TIERS.map((t,i) => `${counts[i]} ${t.label}`).join(" · ")}</p>
+    <div class="row" style="justify-content:center">
+      <button class="primary" id="shareBtn">Copy my result</button>
+    </div>
+    <p class="toast" id="toast" role="status"></p>
+  </section>
+  <section class="card">
+    <h3>Scoreboard on this device</h3>
+    ${boardList(S.board)}
+    <p class="muted small">Passing one phone around? Hand it to the next person.</p>
+    <div class="row"><button class="primary" id="nextPlayer">Next player</button><button id="homeBtn">Start screen</button></div>
+  </section>`;
+}
+function bindResults(){
+  document.getElementById("shareBtn").addEventListener("click", () => copy(shareText(), "toast"));
+  document.getElementById("nextPlayer").addEventListener("click", () => go({ screen:"home", name:"", err:"" }));
+  document.getElementById("homeBtn").addEventListener("click", () => go({ screen:"home", err:"" }));
+}
+
+/* ---------- Router ---------- */
+function render(){
+  const screens = {
+    home:[renderHome, bindHome], gate:[renderGate, bindGate], host:[renderHost, bindHost],
+    hostDone:[renderHostDone, bindHostDone], play:[renderPlay, bindPlay], results:[renderResults, bindResults]
+  };
+  const [r, b] = screens[S.screen] || screens.home;
+  $app.innerHTML = r();
+  b();
+  if(S.screen === "play" && !S.revealed) tick();
+}
+window.addEventListener("hashchange", () => { if(S.screen === "home"){ S.code = hashCode() || S.code; render(); } });
+render();
+</script>
+</body>
+</html>
